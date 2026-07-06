@@ -1,0 +1,15 @@
+import { Outlet } from 'react-router-dom';
+import BottomNav from './BottomNav.jsx';
+import Header from './Header.jsx';
+
+export default function AppLayout() {
+  return (
+    <div className="min-h-screen bg-slate-50 pb-24">
+      <Header />
+      <main className="mx-auto max-w-3xl px-4 py-4">
+        <Outlet />
+      </main>
+      <BottomNav />
+    </div>
+  );
+}
