@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import { assertFamilyMember } from './services/family.service.js';
-import { createMessage } from './services/message.service.js';
+import { createMessage, toggleReaction } from './services/message.service.js';
 import { corsOrigin } from './config/cors.js';
 import { badRequest } from './utils/httpError.js';
 import { optionalString, requireUuid } from './utils/validators.js';
@@ -61,6 +61,18 @@ export function attachSocketServer(httpServer) {
 
     socket.on('typing_stop', ({ familyId, userId }) => {
       socket.to(roomName(familyId)).emit('typing_stop', { userId });
+    });
+
+    socket.on('toggle_reaction', async ({ messageId, userId, emoji }, ack) => {
+      try {
+        messageId = requireUuid(messageId, 'Message id');
+        userId = requireUuid(userId, 'User id');
+        const message = await toggleReaction({ messageId, userId, emoji });
+        io.to(roomName(message.family_id)).emit('message_updated', message);
+        ack?.({ ok: true, message });
+      } catch (error) {
+        ack?.({ ok: false, message: error.message || 'Could not update reaction.' });
+      }
     });
 
     socket.on('call_join', async ({ familyId, userId, fullName, callType }, ack) => {

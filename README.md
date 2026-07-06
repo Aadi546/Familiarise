@@ -77,8 +77,21 @@ where u.full_name = 'Robert Smith' and f.name = 'The Smiths';
 - Realtime family chat with online presence, typing indicators, timestamps, and date separators.
 - Noticeboard with admin-only posting and priority labels.
 - Photo/video upload UI, disabled until Cloudflare R2 is configured.
-- Family audio/video calls using WebRTC and Socket.io signaling.
+- Reliable family calls through a Jitsi call launcher.
+- Optional custom WebRTC/TURN support remains in backend hooks, but Jitsi is recommended for first family testing.
+- Optional web push notification hooks with VAPID keys.
+- Profile photos, birthdays, and family reminders.
 
 ## Calls Note
 
-Chat works over local Wi-Fi/hotspot HTTP during development. Camera and microphone access on phones usually requires HTTPS, so calls are best tested after deployment or through a secure tunnel.
+The Calls page opens a shared Jitsi room. This avoids TURN setup and usually gives a better first experience for family members.
+
+For push notifications, configure:
+
+```env
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:you@example.com
+```
+
+Run `backend/migrations/2026-07-06-family-features.sql` in Supabase, then run `npm run hash:pins` from `backend` to migrate existing plain PINs to hashed PINs.

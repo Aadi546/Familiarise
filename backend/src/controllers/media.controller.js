@@ -9,7 +9,20 @@ export async function getMediaStatus(req, res) {
     bucket: env.r2Bucket || null,
     publicBaseUrl: env.r2PublicBaseUrl || null,
     maxUploadMb: 50,
-    allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime']
+    allowedTypes: [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'video/mp4',
+      'video/webm',
+      'video/quicktime',
+      'audio/webm',
+      'audio/mp4',
+      'audio/mpeg',
+      'audio/ogg',
+      'audio/wav'
+    ]
   });
 }
 

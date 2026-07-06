@@ -46,6 +46,12 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(storageKey);
   }
 
+  function updateUser(nextUser) {
+    const merged = { ...user, ...nextUser };
+    setUser(merged);
+    persist({ user: merged, families, activeFamily });
+  }
+
   const value = useMemo(
     () => ({
       user,
@@ -53,7 +59,8 @@ export function AuthProvider({ children }) {
       activeFamily,
       login,
       logout,
-      selectFamily
+      selectFamily,
+      updateUser
     }),
     [user, families, activeFamily]
   );

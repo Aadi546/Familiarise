@@ -3,21 +3,30 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "seed:family": "node scripts/seedFamily.js"
+    "seed:family": "node scripts/seedFamily.js",
+    "hash:pins": "node scripts/hashPins.js",
+    "push:keys": "node scripts/generateVapidKeys.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
     "@aws-sdk/s3-request-presigner": "^3.600.0",
     "@supabase/supabase-js": "^2.44.4",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.5.2",
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
-    "socket.io": "^4.7.5"
+    "multer": "^2.2.0",
+    "socket.io": "^4.7.5",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"

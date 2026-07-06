@@ -12,6 +12,7 @@ export default function Noticeboard() {
   const [notices, setNotices] = useState([]);
   const [content, setContent] = useState('');
   const [priority, setPriority] = useState('normal');
+  const [isPinned, setIsPinned] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPosting, setIsPosting] = useState(false);
@@ -85,12 +86,14 @@ export default function Noticeboard() {
         authorId: user.id,
         content: content.trim(),
         priority,
+        isPinned,
         mediaFileId
       });
 
       setNotices((current) => [data.notice, ...current]);
       setContent('');
       setPriority('normal');
+      setIsPinned(false);
       setSelectedFile(null);
     } catch (err) {
       setError(err.message);
@@ -121,7 +124,7 @@ export default function Noticeboard() {
             />
           </label>
 
-          <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
+          <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]">
             <select
               value={priority}
               onChange={(event) => setPriority(event.target.value)}
@@ -131,6 +134,16 @@ export default function Noticeboard() {
               <option value="important">Important</option>
               <option value="urgent">Urgent</option>
             </select>
+
+            <label className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-family-50 px-4 text-base font-bold text-family-900">
+              <input
+                type="checkbox"
+                checked={isPinned}
+                onChange={(event) => setIsPinned(event.target.checked)}
+                className="h-5 w-5"
+              />
+              Pin
+            </label>
 
             <label
               className={`flex min-h-12 items-center justify-center gap-2 rounded-lg px-4 text-base font-bold ${
@@ -142,7 +155,7 @@ export default function Noticeboard() {
               Add media
               <input
                 type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+                accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime,audio/webm,audio/mp4,audio/mpeg,audio/ogg,audio/wav"
                 className="sr-only"
                 disabled={!mediaStatus.configured}
                 onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}

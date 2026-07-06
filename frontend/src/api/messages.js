@@ -10,3 +10,10 @@ export function createMessage({ familyId, userId, content, mediaFileId }) {
     body: JSON.stringify({ familyId, userId, content, mediaFileId })
   });
 }
+
+export function reactToMessage({ messageId, userId, emoji }) {
+  return api(`/messages/${messageId}/reactions`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, emoji })
+  });
+}

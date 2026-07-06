@@ -15,7 +15,12 @@ const allowedTypes = new Set([
   'image/gif',
   'video/mp4',
   'video/webm',
-  'video/quicktime'
+  'video/quicktime',
+  'audio/webm',
+  'audio/mp4',
+  'audio/mpeg',
+  'audio/ogg',
+  'audio/wav'
 ]);
 const maxUploadSize = 50 * 1024 * 1024;
 
@@ -27,7 +32,7 @@ export async function createUploadIntent({ familyId, userId, fileName, fileType,
   }
 
   if (!allowedTypes.has(fileType)) {
-    throw badRequest('Only JPG, PNG, WebP, GIF, MP4, WebM, and MOV files are supported.');
+    throw badRequest('Only common image, video, and audio files are supported.');
   }
 
   if (!Number.isFinite(fileSize) || fileSize <= 0 || fileSize > maxUploadSize) {

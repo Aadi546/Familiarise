@@ -1,4 +1,4 @@
-import { ImagePlus, SendHorizontal, X } from 'lucide-react';
+import { ImagePlus, Mic, SendHorizontal, Square, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { fetchMessages } from '../api/messages.js';
 import { fetchMediaStatus, uploadMedia } from '../api/media.js';
@@ -16,12 +16,15 @@ export default function Chat() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [mediaStatus, setMediaStatus] = useState({ configured: false });
   const [onlineMembers, setOnlineMembers] = useState([]);
   const [typingMembers, setTypingMembers] = useState([]);
   const [error, setError] = useState('');
   const endRef = useRef(null);
   const typingTimerRef = useRef(null);
+  const recorderRef = useRef(null);
+  const chunksRef = useRef([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -63,6 +66,7 @@ export default function Chat() {
 
     socket.emit('join_family', { familyId: activeFamily.id, userId: user.id });
     socket.on('new_message', appendMessage);
+    socket.on('message_updated', updateMessage);
     socket.on('family_presence', handlePresence);
     socket.on('typing_start', handleTypingStart);
     socket.on('typing_stop', handleTypingStop);
@@ -71,6 +75,7 @@ export default function Chat() {
       isMounted = false;
       window.clearTimeout(typingTimerRef.current);
       socket.off('new_message', appendMessage);
+      socket.off('message_updated', updateMessage);
       socket.off('family_presence', handlePresence);
       socket.off('typing_start', handleTypingStart);
       socket.off('typing_stop', handleTypingStop);
@@ -89,6 +94,10 @@ export default function Chat() {
 
       return [...current, message];
     });
+  }
+
+  function updateMessage(message) {
+    setMessages((current) => current.map((item) => (item.id === message.id ? message : item)));
   }
 
   function handlePresence({ familyId, online }) {
@@ -173,6 +182,65 @@ export default function Chat() {
     }
   }
 
+  function handleReaction(messageId, emoji) {
+    getSocket().emit('toggle_reaction', { messageId, userId: user.id, emoji }, (ack) => {
+      if (!ack?.ok) {
+        setError(ack?.message || 'Could not update reaction.');
+      }
+    });
+  }
+
+  async function toggleRecording() {
+    if (isRecording) {
+      recorderRef.current?.stop();
+      return;
+    }
+
+    if (!mediaStatus.configured) {
+      setError('Connect Cloudflare R2 before recording voice notes.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      recorderRef.current = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        setIsRecording(false);
+
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const file = new File([blob], `voice-note-${Date.now()}.webm`, { type: 'audio/webm' });
+
+        try {
+          const mediaFile = await uploadMedia({ file, familyId: activeFamily.id, userId: user.id });
+          await new Promise((resolve, reject) => {
+            getSocket().emit(
+              'send_message',
+              { familyId: activeFamily.id, userId: user.id, content: 'Voice note', mediaFileId: mediaFile.id },
+              (ack) => (ack?.ok ? resolve() : reject(new Error(ack?.message || 'Could not send voice note.')))
+            );
+          });
+        } catch (err) {
+          setError(err.message);
+        }
+      };
+
+      recorder.start();
+      setIsRecording(true);
+    } catch {
+      setError('Microphone permission is needed for voice notes.');
+    }
+  }
+
   return (
     <section className="flex min-h-[calc(100vh-11rem)] flex-col">
       <div className="mb-4">
@@ -202,7 +270,7 @@ export default function Chat() {
             return (
               <div key={message.id} className="space-y-4">
                 {showDate && <DateSeparator value={message.created_at} />}
-                <MessageBubble message={message} isMine={message.user_id === user.id} />
+                <MessageBubble message={message} isMine={message.user_id === user.id} onReact={handleReaction} />
               </div>
             );
           })
@@ -235,12 +303,24 @@ export default function Chat() {
             <ImagePlus size={24} />
             <input
               type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+              accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime,audio/webm,audio/mp4,audio/mpeg,audio/ogg,audio/wav"
               className="sr-only"
               disabled={!mediaStatus.configured}
               onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
             />
           </label>
+          <button
+            type="button"
+            onClick={toggleRecording}
+            disabled={!mediaStatus.configured}
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${
+              isRecording ? 'bg-rose-600 text-white' : mediaStatus.configured ? 'bg-slate-100 text-slate-700' : 'bg-slate-100 text-slate-400'
+            }`}
+            aria-label={isRecording ? 'Stop recording' : 'Record voice note'}
+            title={mediaStatus.configured ? 'Record voice note' : 'Connect Cloudflare R2 to enable voice notes'}
+          >
+            {isRecording ? <Square size={21} /> : <Mic size={22} />}
+          </button>
           <textarea
             value={content}
             onChange={handleContentChange}

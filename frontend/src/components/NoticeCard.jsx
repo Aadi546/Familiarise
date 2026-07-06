@@ -12,12 +12,13 @@ export default function NoticeCard({ notice }) {
   const media = notice.media_files;
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <article className={`rounded-lg border bg-white p-4 shadow-sm ${notice.is_pinned ? 'border-family-600 ring-2 ring-family-100' : 'border-slate-200'}`}>
       <div className="flex items-start gap-3">
         <Avatar name={author.full_name} src={author.avatar_url} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="truncate text-lg font-bold text-slate-950">{author.full_name}</h2>
+            {notice.is_pinned && <span className="rounded-full bg-family-100 px-3 py-1 text-sm font-bold text-family-900">Pinned</span>}
             <span className={`rounded-full px-3 py-1 text-sm font-bold capitalize ${priorityStyles[notice.priority]}`}>
               {notice.priority}
             </span>

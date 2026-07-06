@@ -24,7 +24,13 @@ export const env = {
   r2AccessKeyId: process.env.R2_ACCESS_KEY_ID,
   r2SecretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   r2Bucket: process.env.R2_BUCKET,
-  r2PublicBaseUrl: process.env.R2_PUBLIC_BASE_URL
+  r2PublicBaseUrl: process.env.R2_PUBLIC_BASE_URL,
+  turnUrls: process.env.TURN_URLS,
+  turnUsername: process.env.TURN_USERNAME,
+  turnCredential: process.env.TURN_CREDENTIAL,
+  vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY,
+  vapidSubject: process.env.VAPID_SUBJECT || 'mailto:family-hub@example.com'
 };
 
 export const isSupabaseConfigured =

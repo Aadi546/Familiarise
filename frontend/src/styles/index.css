@@ -21,6 +21,11 @@ body {
   margin: 0;
 }
 
+::selection {
+  background: #99f6e4;
+  color: #134e4a;
+}
+
 button,
 input,
 textarea,

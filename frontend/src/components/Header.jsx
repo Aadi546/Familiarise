@@ -9,7 +9,9 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
       <div className="mx-auto flex max-w-3xl items-center gap-3">
-        <Avatar name={user?.full_name} src={user?.avatar_url} />
+        <Link to="/profile" aria-label="Open profile" title="Open profile">
+          <Avatar name={user?.full_name} src={user?.avatar_url} />
+        </Link>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-slate-500">{user?.full_name}</p>
           <h1 className="truncate text-xl font-bold text-slate-950">{activeFamily?.name || 'Family Hub'}</h1>

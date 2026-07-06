@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
@@ -84,7 +85,8 @@ async function run() {
       const { error: updateError } = await supabase
         .from('users')
         .update({
-          pin: member.pin,
+          pin: null,
+          pin_hash: await bcrypt.hash(member.pin, 12),
           is_active: true
         })
         .eq('id', userId);
@@ -97,7 +99,8 @@ async function run() {
         .from('users')
         .insert({
           full_name: member.full_name,
-          pin: member.pin,
+          pin: null,
+          pin_hash: await bcrypt.hash(member.pin, 12),
           avatar_url: null,
           is_active: true
         })

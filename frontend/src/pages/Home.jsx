@@ -1,13 +1,20 @@
-import { ChevronRight, ImagePlus, Megaphone, MessageCircle, Phone, ShieldCheck } from 'lucide-react';
+import { Bell, CalendarDays, ChevronRight, ImagePlus, Megaphone, MessageCircle, Phone, ShieldCheck, UserRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMediaStatus } from '../api/media.js';
+import { createReminder, fetchReminders } from '../api/reminders.js';
+import { fetchPushPublicKey, savePushSubscription } from '../api/push.js';
 import Avatar from '../components/Avatar.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function Home() {
   const { user, activeFamily } = useAuth();
   const [mediaStatus, setMediaStatus] = useState({ configured: false });
+  const [reminders, setReminders] = useState([]);
+  const [reminderTitle, setReminderTitle] = useState('');
+  const [reminderDate, setReminderDate] = useState('');
+  const [notice, setNotice] = useState('');
+  const isAdmin = activeFamily.role === 'admin';
 
   useEffect(() => {
     let isMounted = true;
@@ -24,10 +31,76 @@ export default function Home() {
         }
       });
 
+    fetchReminders(activeFamily.id, user.id)
+      .then((data) => {
+        if (isMounted) {
+          setReminders(data.reminders || []);
+        }
+      })
+      .catch(() => {});
+
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [activeFamily.id, user.id]);
+
+  async function handleReminderSubmit(event) {
+    event.preventDefault();
+
+    if (!reminderTitle.trim() || !reminderDate) {
+      return;
+    }
+
+    try {
+      const data = await createReminder({
+        familyId: activeFamily.id,
+        authorId: user.id,
+        title: reminderTitle.trim(),
+        details: null,
+        remindOn: reminderDate
+      });
+
+      setReminders((current) => [...current, data.reminder].sort((a, b) => a.remind_on.localeCompare(b.remind_on)));
+      setReminderTitle('');
+      setReminderDate('');
+    } catch (err) {
+      setNotice(err.message);
+    }
+  }
+
+  async function enableNotifications() {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        setNotice('Push notifications are not supported in this browser.');
+        return;
+      }
+
+      const config = await fetchPushPublicKey();
+
+      if (!config.configured) {
+        setNotice('Push notifications need VAPID keys configured on the backend.');
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+
+      if (permission !== 'granted') {
+        setNotice('Notification permission was not granted.');
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.register('/push-sw.js');
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(config.publicKey)
+      });
+
+      await savePushSubscription({ userId: user.id, familyId: activeFamily.id, subscription });
+      setNotice('Push notifications enabled.');
+    } catch (err) {
+      setNotice(err.message);
+    }
+  }
 
   return (
     <section className="space-y-5">
@@ -61,6 +134,57 @@ export default function Home() {
           title="Family Calls"
           description="Start an audio or video call when people are online."
         />
+        <HomeAction
+          to="/profile"
+          icon={<UserRound size={26} />}
+          title="Profile"
+          description="Add your photo and birthday."
+        />
+      </div>
+
+      {notice && <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{notice}</p>}
+
+      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-3 flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-family-100 text-family-900">
+            <CalendarDays size={24} />
+          </div>
+          <div>
+            <h3 className="text-lg font-black text-slate-950">Birthdays and Reminders</h3>
+            <p className="text-sm font-semibold text-slate-500">Upcoming family dates.</p>
+          </div>
+        </div>
+
+        {isAdmin && (
+          <form onSubmit={handleReminderSubmit} className="mb-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+            <input
+              value={reminderTitle}
+              onChange={(event) => setReminderTitle(event.target.value)}
+              className="h-12 rounded-lg border border-slate-300 px-4 text-base outline-none focus:border-family-700 focus:ring-4 focus:ring-family-100"
+              placeholder="Reminder title"
+            />
+            <input
+              type="date"
+              value={reminderDate}
+              onChange={(event) => setReminderDate(event.target.value)}
+              className="h-12 rounded-lg border border-slate-300 px-4 text-base outline-none focus:border-family-700 focus:ring-4 focus:ring-family-100"
+            />
+            <button className="min-h-12 rounded-lg bg-family-700 px-5 text-base font-black text-white">Add</button>
+          </form>
+        )}
+
+        {reminders.length === 0 ? (
+          <p className="text-base font-semibold text-slate-500">No upcoming reminders yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {reminders.map((reminder) => (
+              <div key={reminder.id} className="rounded-lg bg-slate-50 px-3 py-2">
+                <p className="font-black text-slate-950">{reminder.title}</p>
+                <p className="text-sm font-semibold text-slate-500">{new Date(`${reminder.remind_on}T00:00:00`).toLocaleDateString()}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -99,6 +223,15 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={enableNotifications}
+        className="flex min-h-14 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-base font-black text-slate-800 shadow-sm"
+      >
+        <Bell size={22} />
+        Enable Notifications
+      </button>
     </section>
   );
 }
@@ -114,4 +247,17 @@ function HomeAction({ to, icon, title, description }) {
       <ChevronRight className="shrink-0 text-slate-400" size={24} />
     </Link>
   );
+}
+
+function urlBase64ToUint8Array(value) {
+  const padding = '='.repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = window.atob(base64);
+  const output = new Uint8Array(raw.length);
+
+  for (let index = 0; index < raw.length; index += 1) {
+    output[index] = raw.charCodeAt(index);
+  }
+
+  return output;
 }

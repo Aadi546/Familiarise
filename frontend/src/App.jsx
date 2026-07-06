@@ -7,6 +7,7 @@ import FamilySelect from './pages/FamilySelect.jsx';
 import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
 import Noticeboard from './pages/Noticeboard.jsx';
+import Profile from './pages/Profile.jsx';
 
 function RequireAuth({ children }) {
   const { user, activeFamily } = useAuth();
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="chat" element={<Chat />} />
         <Route path="notices" element={<Noticeboard />} />
         <Route path="calls" element={<Calls />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
       <Route path="*" element={<Navigate to={user ? '/' : '/login'} replace />} />
     </Routes>

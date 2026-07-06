@@ -16,8 +16,9 @@ export async function postNotice(req, res) {
   const authorId = requireUuid(req.body.authorId, 'Author id');
   const content = requireString(req.body.content, 'Notice', 4000);
   const priority = priorities.has(req.body.priority) ? req.body.priority : 'normal';
+  const isPinned = Boolean(req.body.isPinned);
   const mediaFileId = req.body.mediaFileId ? requireUuid(req.body.mediaFileId, 'Media file id') : null;
-  const notice = await createNotice({ familyId, authorId, content, priority, mediaFileId });
+  const notice = await createNotice({ familyId, authorId, content, priority, mediaFileId, isPinned });
 
   res.status(201).json({ notice });
 }
