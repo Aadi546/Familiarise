@@ -1,4 +1,4 @@
-import { createNotice, getNotices } from '../services/notice.service.js';
+import { createNotice, deleteNotice, getNotices } from '../services/notice.service.js';
 import { optionalString, requireString, requireUuid } from '../utils/validators.js';
 
 const priorities = new Set(['normal', 'important', 'urgent']);
@@ -7,7 +7,6 @@ export async function listNotices(req, res) {
   const familyId = requireUuid(req.params.familyId, 'Family id');
   const viewerId = requireUuid(req.query.viewerId, 'Viewer id');
   const notices = await getNotices(familyId, viewerId);
-
   res.json({ notices });
 }
 
@@ -19,6 +18,12 @@ export async function postNotice(req, res) {
   const isPinned = Boolean(req.body.isPinned);
   const mediaFileId = req.body.mediaFileId ? requireUuid(req.body.mediaFileId, 'Media file id') : null;
   const notice = await createNotice({ familyId, authorId, content, priority, mediaFileId, isPinned });
-
   res.status(201).json({ notice });
+}
+
+export async function removeNotice(req, res) {
+  const noticeId = requireUuid(req.params.noticeId, 'Notice id');
+  const userId = requireUuid(req.body.userId, 'User id');
+  await deleteNotice({ noticeId, userId });
+  res.json({ ok: true });
 }

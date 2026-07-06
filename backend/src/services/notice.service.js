@@ -77,3 +77,23 @@ export async function createNotice({ familyId, authorId, content, priority, medi
 
   return data;
 }
+
+export async function deleteNotice({ noticeId, userId }) {
+  // Fetch the notice to get its familyId
+  const { data: notice, error: fetchError } = await supabase
+    .from('notices')
+    .select('id, family_id')
+    .eq('id', noticeId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (!notice) throw { status: 404, message: 'Notice not found.' };
+
+  // Only admins of that family can delete notices
+  await assertFamilyAdmin(userId, notice.family_id);
+
+  const { error } = await supabase.from('notices').delete().eq('id', noticeId);
+  if (error) throw error;
+
+  return { noticeId };
+}

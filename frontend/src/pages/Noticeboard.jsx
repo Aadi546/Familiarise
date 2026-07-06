@@ -1,7 +1,7 @@
 import { ImagePlus, Pin, SendHorizontal, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { fetchMediaStatus, uploadMedia } from '../api/media.js';
-import { createNotice, fetchNotices } from '../api/notices.js';
+import { createNotice, deleteNotice, fetchNotices } from '../api/notices.js';
 import EmptyState from '../components/EmptyState.jsx';
 import LoadingState from '../components/LoadingState.jsx';
 import NoticeCard from '../components/NoticeCard.jsx';
@@ -60,6 +60,15 @@ export default function Noticeboard() {
       setError(err.message);
     } finally {
       setIsPosting(false);
+    }
+  }
+
+  async function handleDelete(noticeId) {
+    try {
+      await deleteNotice({ noticeId, userId: user.id });
+      setNotices((c) => c.filter((n) => n.id !== noticeId));
+    } catch (err) {
+      setError(err.message);
     }
   }
 
@@ -164,7 +173,9 @@ export default function Noticeboard() {
         ) : notices.length === 0 ? (
           <EmptyState title="No notices yet" message="Important family announcements will appear here." />
         ) : (
-          notices.map((n) => <NoticeCard key={n.id} notice={n} />)
+          notices.map((n) => (
+            <NoticeCard key={n.id} notice={n} isAdmin={isAdmin} onDelete={handleDelete} />
+          ))
         )}
       </div>
     </div>

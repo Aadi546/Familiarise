@@ -10,3 +10,10 @@ export function createNotice({ familyId, authorId, content, priority, mediaFileI
     body: JSON.stringify({ familyId, authorId, content, priority, mediaFileId, isPinned })
   });
 }
+
+export function deleteNotice({ noticeId, userId }) {
+  return api(`/notices/${noticeId}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ userId })
+  });
+}

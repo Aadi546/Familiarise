@@ -144,3 +144,20 @@ export async function toggleReaction({ messageId, userId, emoji }) {
 
   return data;
 }
+
+export async function deleteMessage({ messageId, userId }) {
+  const { data: message, error: fetchError } = await supabase
+    .from('messages')
+    .select('id, family_id, user_id')
+    .eq('id', messageId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (!message) throw { status: 404, message: 'Message not found.' };
+  if (message.user_id !== userId) throw { status: 403, message: 'You can only delete your own messages.' };
+
+  const { error } = await supabase.from('messages').delete().eq('id', messageId);
+  if (error) throw error;
+
+  return { messageId, familyId: message.family_id };
+}

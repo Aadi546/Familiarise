@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import { assertFamilyMember } from './services/family.service.js';
-import { createMessage, toggleReaction } from './services/message.service.js';
+import { createMessage, deleteMessage, toggleReaction } from './services/message.service.js';
 import { corsOrigin } from './config/cors.js';
 import { badRequest } from './utils/httpError.js';
 import { optionalString, requireUuid } from './utils/validators.js';
@@ -72,6 +72,19 @@ export function attachSocketServer(httpServer) {
         ack?.({ ok: true, message });
       } catch (error) {
         ack?.({ ok: false, message: error.message || 'Could not update reaction.' });
+      }
+    });
+
+    socket.on('delete_message', async ({ messageId, userId }, ack) => {
+      try {
+        messageId = requireUuid(messageId, 'Message id');
+        userId = requireUuid(userId, 'User id');
+        const result = await deleteMessage({ messageId, userId });
+        // Broadcast deletion to all family members (including sender)
+        io.to(roomName(result.familyId)).emit('message_deleted', { messageId: result.messageId });
+        ack?.({ ok: true });
+      } catch (error) {
+        ack?.({ ok: false, message: error.message || 'Could not delete message.' });
       }
     });
 
