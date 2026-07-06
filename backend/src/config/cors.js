@@ -23,6 +23,8 @@ export function isAllowedOrigin(origin) {
     return (
       host === 'localhost' ||
       host === '127.0.0.1' ||
+      host === 'familiarise.vercel.app' ||
+      host.endsWith('.vercel.app') ||
       host.startsWith('192.168.') ||
       host.startsWith('10.') ||
       /^172\.(1[6-9]|2\d|3[0-1])\./.test(host)
