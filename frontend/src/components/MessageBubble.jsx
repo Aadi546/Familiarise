@@ -1,84 +1,101 @@
 import Avatar from './Avatar.jsx';
 import { formatTime } from '../utils/date.js';
 
+const EMOJI_MAP = {
+  heart: '❤️',
+  thumbs_up: '👍',
+  laugh: '😂',
+  pray: '🙏'
+};
+
 export default function MessageBubble({ message, isMine, onReact }) {
   const author = message.users || {};
   const media = message.media_files;
+  const reactions = message.message_reactions || [];
 
   return (
-    <div className={`flex gap-3 ${isMine ? 'flex-row-reverse' : ''}`}>
-      <Avatar name={author.full_name} src={author.avatar_url} className="mt-1" />
-      <div className={`max-w-[78%] ${isMine ? 'items-end' : 'items-start'} flex flex-col`}>
+    <div className={`flex gap-2.5 animate-slide-up ${isMine ? 'flex-row-reverse' : ''}`}>
+      {!isMine && <Avatar name={author.full_name} src={author.avatar_url} className="mt-auto h-8 w-8 text-xs" />}
+
+      <div className={`max-w-[78%] flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+        {/* Bubble */}
         <div
-          className={`rounded-lg px-4 py-3 shadow-sm ${
-            isMine ? 'bg-family-700 text-white' : 'border border-slate-200 bg-white text-slate-950'
+          className={`relative rounded-2xl px-4 py-3 ${
+            isMine
+              ? 'bg-teal-600 text-white rounded-br-md shadow-glow-teal-sm'
+              : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-bl-md'
           }`}
         >
-          {!isMine && <p className="mb-1 text-sm font-bold text-family-700">{author.full_name}</p>}
+          {!isMine && (
+            <p className="mb-1 text-xs font-bold text-teal-600 dark:text-teal-400">
+              {author.full_name}
+            </p>
+          )}
+
+          {/* Media */}
           {media?.public_url && media.file_type?.startsWith('image/') && (
             <img
               src={media.public_url}
               alt=""
-              className="mb-3 max-h-80 w-full rounded-md object-cover"
+              className="mb-2 max-h-72 w-full rounded-xl object-cover"
               loading="lazy"
             />
           )}
           {media?.public_url && media.file_type?.startsWith('video/') && (
-            <video src={media.public_url} controls className="mb-3 max-h-80 w-full rounded-md" />
+            <video src={media.public_url} controls className="mb-2 max-h-64 w-full rounded-xl" />
           )}
           {media?.public_url && media.file_type?.startsWith('audio/') && (
-            <audio src={media.public_url} controls className="mb-3 w-full" />
+            <audio src={media.public_url} controls className="mb-2 w-full" />
           )}
-          {message.content && <p className="whitespace-pre-wrap text-base leading-7">{message.content}</p>}
-          <MessageReactions reactions={message.message_reactions || []} />
+
+          {message.content && (
+            <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>
+          )}
+
+          {/* Reaction badges */}
+          {reactions.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {Object.entries(
+                reactions.reduce((acc, r) => {
+                  acc[r.emoji] = (acc[r.emoji] || 0) + 1;
+                  return acc;
+                }, {})
+              ).map(([emoji, count]) => (
+                <span
+                  key={emoji}
+                  className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                    isMine
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                  }`}
+                >
+                  {EMOJI_MAP[emoji] || emoji} {count}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        <p className="mt-1 px-1 text-sm font-medium text-slate-500">{formatTime(message.created_at)}</p>
-        <div className={`mt-1 flex gap-1 ${isMine ? 'justify-end' : 'justify-start'}`}>
-          {[
-            ['heart', 'Love'],
-            ['thumbs_up', 'Like'],
-            ['laugh', 'Laugh'],
-            ['pray', 'Pray']
-          ].map(([emoji, label]) => (
+
+        {/* Timestamp */}
+        <p className={`mt-1 px-1 text-[10px] font-medium text-slate-400 dark:text-slate-500`}>
+          {formatTime(message.created_at)}
+        </p>
+
+        {/* Reaction buttons */}
+        <div className={`flex gap-1 mt-0.5 ${isMine ? 'flex-row-reverse' : ''}`}>
+          {Object.entries(EMOJI_MAP).map(([key, emoji]) => (
             <button
-              key={emoji}
+              key={key}
               type="button"
-              onClick={() => onReact?.(message.id, emoji)}
-              className="rounded-full bg-slate-100 px-2 py-1 text-xs font-black text-slate-700"
+              onClick={() => onReact?.(message.id, key)}
+              className="rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-2 py-0.5 text-xs transition-all duration-150 active:scale-110 select-none"
+              title={key}
             >
-              {label}
+              {emoji}
             </button>
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function MessageReactions({ reactions }) {
-  if (!reactions.length) {
-    return null;
-  }
-
-  const labels = {
-    heart: 'Love',
-    thumbs_up: 'Like',
-    laugh: 'Laugh',
-    pray: 'Pray'
-  };
-
-  const counts = reactions.reduce((acc, reaction) => {
-    acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
-    return acc;
-  }, {});
-
-  return (
-    <div className="mt-3 flex flex-wrap gap-2">
-      {Object.entries(counts).map(([emoji, count]) => (
-        <span key={emoji} className="rounded-full bg-white/80 px-2 py-1 text-xs font-black text-slate-700">
-          {labels[emoji]} {count}
-        </span>
-      ))}
     </div>
   );
 }

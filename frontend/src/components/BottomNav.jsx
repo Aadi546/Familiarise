@@ -1,32 +1,35 @@
 import { Home, Megaphone, MessageCircle, Phone } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
-const itemClass = ({ isActive }) =>
-  [
-    'flex min-h-14 flex-1 items-center justify-center gap-1 rounded-lg px-2 text-sm font-bold transition sm:gap-2 sm:text-base',
-    isActive ? 'bg-family-700 text-white' : 'text-slate-700 hover:bg-slate-100'
-  ].join(' ');
+const links = [
+  { to: '/home', end: true, icon: Home, label: 'Home' },
+  { to: '/chat', icon: MessageCircle, label: 'Chat' },
+  { to: '/notices', icon: Megaphone, label: 'Notices' },
+  { to: '/calls', icon: Phone, label: 'Calls' }
+];
 
 export default function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white px-3 pt-2 safe-bottom">
-      <div className="mx-auto flex max-w-3xl gap-2">
-        <NavLink to="/" end className={itemClass}>
-          <Home size={22} />
-          Home
-        </NavLink>
-        <NavLink to="/chat" className={itemClass}>
-          <MessageCircle size={22} />
-          Chat
-        </NavLink>
-        <NavLink to="/notices" className={itemClass}>
-          <Megaphone size={22} />
-          Notices
-        </NavLink>
-        <NavLink to="/calls" className={itemClass}>
-          <Phone size={22} />
-          Calls
-        </NavLink>
+    <nav className="fixed bottom-4 left-1/2 z-30 -translate-x-1/2 px-3">
+      <div className="flex items-center gap-1 rounded-2xl glass shadow-glow-teal-sm border border-slate-200/60 dark:border-slate-700/60 px-2 py-2">
+        {links.map(({ to, end, icon: Icon, label }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              [
+                'flex flex-col items-center justify-center gap-0.5 rounded-xl px-4 py-2 min-w-[60px] transition-all duration-200 select-none',
+                isActive
+                  ? 'bg-teal-600 text-white shadow-glow-teal-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200'
+              ].join(' ')
+            }
+          >
+            <Icon size={20} strokeWidth={2.2} />
+            <span className="text-[10px] font-bold tracking-tight">{label}</span>
+          </NavLink>
+        ))}
       </div>
     </nav>
   );

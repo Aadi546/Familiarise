@@ -1,43 +1,81 @@
 import Avatar from './Avatar.jsx';
 import { formatDateTime } from '../utils/date.js';
+import { Pin } from 'lucide-react';
 
-const priorityStyles = {
-  normal: 'bg-slate-100 text-slate-700',
-  important: 'bg-amber-100 text-amber-900',
-  urgent: 'bg-rose-100 text-rose-900'
+const priorityConfig = {
+  normal: {
+    bar: 'bg-slate-300 dark:bg-slate-600',
+    badge: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+  },
+  important: {
+    bar: 'bg-amber-400 dark:bg-amber-500',
+    badge: 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300'
+  },
+  urgent: {
+    bar: 'bg-rose-500 dark:bg-rose-600',
+    badge: 'bg-rose-100 dark:bg-rose-900/50 text-rose-800 dark:text-rose-300'
+  }
 };
 
 export default function NoticeCard({ notice }) {
   const author = notice.users || {};
   const media = notice.media_files;
+  const cfg = priorityConfig[notice.priority] || priorityConfig.normal;
 
   return (
-    <article className={`rounded-lg border bg-white p-4 shadow-sm ${notice.is_pinned ? 'border-family-600 ring-2 ring-family-100' : 'border-slate-200'}`}>
-      <div className="flex items-start gap-3">
-        <Avatar name={author.full_name} src={author.avatar_url} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="truncate text-lg font-bold text-slate-950">{author.full_name}</h2>
-            {notice.is_pinned && <span className="rounded-full bg-family-100 px-3 py-1 text-sm font-bold text-family-900">Pinned</span>}
-            <span className={`rounded-full px-3 py-1 text-sm font-bold capitalize ${priorityStyles[notice.priority]}`}>
-              {notice.priority}
-            </span>
+    <article
+      className={`card animate-slide-up overflow-hidden transition-all duration-200 ${
+        notice.is_pinned
+          ? 'ring-1 ring-teal-500/50 dark:ring-teal-400/40 shadow-glow-teal-sm'
+          : ''
+      }`}
+    >
+      {/* Priority bar */}
+      <div className={`h-1 w-full ${cfg.bar}`} />
+
+      <div className="p-4">
+        {/* Header row */}
+        <div className="flex items-start gap-3">
+          <Avatar name={author.full_name} src={author.avatar_url} />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-bold text-slate-900 dark:text-white text-sm">
+                {author.full_name}
+              </span>
+              {notice.is_pinned && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-teal-100 dark:bg-teal-900/40 px-2 py-0.5 text-xs font-bold text-teal-700 dark:text-teal-300">
+                  <Pin size={10} />
+                  Pinned
+                </span>
+              )}
+              <span className={`rounded-full px-2 py-0.5 text-xs font-bold capitalize ${cfg.badge}`}>
+                {notice.priority}
+              </span>
+            </div>
+            <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+              {formatDateTime(notice.created_at)}
+            </p>
           </div>
-          <p className="mt-1 text-sm font-semibold text-slate-500">{formatDateTime(notice.created_at)}</p>
         </div>
+
+        {/* Content */}
+        <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-800 dark:text-slate-200">
+          {notice.content}
+        </p>
+
+        {/* Media */}
+        {media?.public_url && media.file_type?.startsWith('image/') && (
+          <img
+            src={media.public_url}
+            alt=""
+            className="mt-4 max-h-80 w-full rounded-xl object-cover"
+            loading="lazy"
+          />
+        )}
+        {media?.public_url && media.file_type?.startsWith('video/') && (
+          <video src={media.public_url} controls className="mt-4 max-h-80 w-full rounded-xl" />
+        )}
       </div>
-      <p className="mt-4 whitespace-pre-wrap text-lg leading-8 text-slate-800">{notice.content}</p>
-      {media?.public_url && media.file_type?.startsWith('image/') && (
-        <img
-          src={media.public_url}
-          alt=""
-          className="mt-4 max-h-96 w-full rounded-lg object-cover"
-          loading="lazy"
-        />
-      )}
-      {media?.public_url && media.file_type?.startsWith('video/') && (
-        <video src={media.public_url} controls className="mt-4 max-h-96 w-full rounded-lg" />
-      )}
     </article>
   );
 }

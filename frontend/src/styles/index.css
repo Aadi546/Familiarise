@@ -1,14 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
+  font-family: 'Inter', system-ui, sans-serif;
   color: #0f172a;
   background: #f8fafc;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.dark {
+  color: #f1f5f9;
+  background: #020617;
 }
 
 html,
@@ -26,6 +34,11 @@ body {
   color: #134e4a;
 }
 
+.dark ::selection {
+  background: #0d9488;
+  color: #f0fdfa;
+}
+
 button,
 input,
 textarea,
@@ -34,5 +47,71 @@ select {
 }
 
 .safe-bottom {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(15, 118, 110, 0.25);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 118, 110, 0.5);
+}
+
+@layer components {
+  /* Glassmorphism */
+  .glass {
+    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/50 dark:border-slate-700/50;
+  }
+  .glass-dark {
+    @apply bg-slate-950/80 backdrop-blur-xl border border-slate-800/60;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-card dark:shadow-none;
+  }
+  .card-hover {
+    @apply hover:shadow-card-hover dark:hover:border-slate-700 transition-all duration-200;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white font-bold rounded-xl transition-all duration-200 active:scale-[0.97] select-none;
+  }
+  .btn-secondary {
+    @apply bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl transition-all duration-200 active:scale-[0.97] select-none;
+  }
+  .btn-ghost {
+    @apply hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl transition-all duration-200 active:scale-[0.97] select-none;
+  }
+
+  /* Inputs */
+  .input {
+    @apply bg-slate-100 dark:bg-slate-800 border-0 rounded-xl px-4 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-teal-500/70 dark:focus:ring-teal-400/60 transition-all duration-200;
+  }
+
+  /* Typography */
+  .page-title {
+    @apply text-2xl font-black text-slate-950 dark:text-white;
+  }
+  .page-subtitle {
+    @apply text-sm font-medium text-slate-500 dark:text-slate-400;
+  }
+
+  /* Badges */
+  .badge-teal {
+    @apply rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300 font-bold text-xs px-2.5 py-0.5;
+  }
+  .badge-online {
+    @apply inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 font-bold text-xs px-2.5 py-0.5;
+  }
 }

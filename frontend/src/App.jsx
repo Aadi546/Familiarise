@@ -5,22 +5,16 @@ import Calls from './pages/Calls.jsx';
 import Chat from './pages/Chat.jsx';
 import FamilySelect from './pages/FamilySelect.jsx';
 import Home from './pages/Home.jsx';
+import Landing from './pages/Landing.jsx';
 import Login from './pages/Login.jsx';
 import Noticeboard from './pages/Noticeboard.jsx';
 import Profile from './pages/Profile.jsx';
 
-function RequireAuth({ children }) {
+function AuthLayout() {
   const { user, activeFamily } = useAuth();
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (!activeFamily) {
-    return <Navigate to="/family" replace />;
-  }
-
-  return children;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!activeFamily) return <Navigate to="/family" replace />;
+  return <AppLayout />;
 }
 
 export default function App() {
@@ -28,23 +22,24 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+      {/* Landing — only for guests */}
+      <Route path="/" element={!user ? <Landing /> : <Navigate to="/home" replace />} />
+
+      {/* Auth pages */}
+      <Route path="/login" element={user ? <Navigate to="/home" replace /> : <Login />} />
       <Route path="/family" element={user ? <FamilySelect /> : <Navigate to="/login" replace />} />
-      <Route
-        path="/"
-        element={
-          <RequireAuth>
-            <AppLayout />
-          </RequireAuth>
-        }
-      >
-        <Route index element={<Home />} />
-        <Route path="chat" element={<Chat />} />
-        <Route path="notices" element={<Noticeboard />} />
-        <Route path="calls" element={<Calls />} />
-        <Route path="profile" element={<Profile />} />
+
+      {/* Authenticated app pages */}
+      <Route element={<AuthLayout />}>
+        <Route path="/home" element={<Home />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route path="/notices" element={<Noticeboard />} />
+        <Route path="/calls" element={<Calls />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
-      <Route path="*" element={<Navigate to={user ? '/' : '/login'} replace />} />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to={user ? '/home' : '/'} replace />} />
     </Routes>
   );
 }
