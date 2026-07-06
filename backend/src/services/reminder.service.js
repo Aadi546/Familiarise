@@ -13,6 +13,11 @@ export async function getReminders({ familyId, viewerId }) {
     .limit(20);
 
   if (error) {
+    // Return empty if reminders table doesn't exist yet
+    if (error.code === '42P01' || error.code === 'PGRST200' || error.message?.includes('reminders')) {
+      return [];
+    }
+
     throw error;
   }
 

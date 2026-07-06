@@ -2,6 +2,16 @@ import { supabase } from '../config/supabase.js';
 import { assertFamilyMember } from './family.service.js';
 import { notifyFamily } from './push.service.js';
 
+const messageSelectBase = `
+  id,
+  family_id,
+  user_id,
+  content,
+  created_at,
+  media_files(id, public_url, file_type, file_size),
+  users!messages_user_id_fkey(id, full_name, avatar_url)
+`;
+
 const messageSelect = `
   id,
   family_id,
@@ -24,15 +34,24 @@ export async function getMessages(familyId, viewerId) {
     .limit(100);
 
   if (error) {
+    // If reactions join fails (table missing), fall back to base select
+    if (error.code === '42703' || error.code === 'PGRST200' || error.message?.includes('message_reactions')) {
+      const { data: fallback, error: fallbackError } = await supabase
+        .from('messages')
+        .select(messageSelectBase)
+        .eq('family_id', familyId)
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (fallbackError) {
+        throw fallbackError;
+      }
+
+      return (fallback || []).map((msg) => ({ ...msg, message_reactions: [] }));
+    }
+
     throw error;
   }
-
-  await notifyFamily({
-    familyId,
-    title: 'New family message',
-    body: data.content || 'New media message',
-    excludeUserId: userId
-  });
 
   return data;
 }
@@ -54,6 +73,13 @@ export async function createMessage({ familyId, userId, content, mediaFileId }) 
   if (error) {
     throw error;
   }
+
+  await notifyFamily({
+    familyId,
+    title: 'New family message',
+    body: data.content || 'New media message',
+    excludeUserId: userId
+  });
 
   return data;
 }

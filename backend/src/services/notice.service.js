@@ -26,15 +26,24 @@ export async function getNotices(familyId, viewerId) {
     .limit(100);
 
   if (error) {
+    // If is_pinned column missing, fall back to ordering by created_at only
+    if (error.code === '42703' || error.message?.includes('is_pinned')) {
+      const { data: fallback, error: fallbackError } = await supabase
+        .from('notices')
+        .select(noticeSelect)
+        .eq('family_id', familyId)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (fallbackError) {
+        throw fallbackError;
+      }
+
+      return (fallback || []).map((n) => ({ ...n, is_pinned: false }));
+    }
+
     throw error;
   }
-
-  await notifyFamily({
-    familyId,
-    title: isPinned ? 'Pinned family notice' : 'New family notice',
-    body: data.content,
-    excludeUserId: authorId
-  });
 
   return data;
 }
@@ -58,6 +67,13 @@ export async function createNotice({ familyId, authorId, content, priority, medi
   if (error) {
     throw error;
   }
+
+  await notifyFamily({
+    familyId,
+    title: isPinned ? 'Pinned family notice' : 'New family notice',
+    body: data.content,
+    excludeUserId: authorId
+  });
 
   return data;
 }

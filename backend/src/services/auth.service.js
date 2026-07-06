@@ -11,6 +11,30 @@ export async function loginWithPin(fullName, pin) {
     .limit(1);
 
   if (error) {
+    // If new columns (pin_hash, birthday) don't exist yet, fall back to original columns
+    if (error.code === '42703' || error.message?.includes('pin_hash') || error.message?.includes('birthday')) {
+      const { data: fallbackUsers, error: fallbackError } = await supabase
+        .from('users')
+        .select('id, full_name, pin, avatar_url, is_active')
+        .ilike('full_name', fullName)
+        .limit(1);
+
+      if (fallbackError) {
+        throw fallbackError;
+      }
+
+      const fallbackUser = fallbackUsers?.[0];
+
+      if (!fallbackUser || fallbackUser.pin !== pin || !fallbackUser.is_active) {
+        throw badRequest('Name or PIN is incorrect.');
+      }
+
+      const families = await getFamiliesForUser(fallbackUser.id);
+      const { pin: _pin, ...safeUser } = fallbackUser;
+
+      return { user: safeUser, families };
+    }
+
     throw error;
   }
 
