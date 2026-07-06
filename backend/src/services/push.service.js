@@ -44,40 +44,48 @@ export async function notifyFamily({ familyId, title, body, excludeUserId }) {
     return;
   }
 
-  const { data, error } = await supabase
-    .from('family_members')
-    .select('user_id, users!family_members_user_id_fkey(push_subscriptions(subscription, endpoint))')
-    .eq('family_id', familyId);
+  try {
+    const { data: members, error: membersError } = await supabase
+      .from('family_members')
+      .select('user_id')
+      .eq('family_id', familyId);
 
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  const sends = [];
-
-  for (const member of data || []) {
-    if (member.user_id === excludeUserId) {
-      continue;
+    if (membersError) {
+      console.error('notifyFamily: failed to fetch members', membersError);
+      return;
     }
 
-    for (const row of member.users?.push_subscriptions || []) {
-      sends.push(
-        webpush
-          .sendNotification(
-            row.subscription,
-            JSON.stringify({
-              title,
-              body,
-              url: '/'
-            })
-          )
-          .catch((sendError) => {
-            console.error(sendError);
-          })
-      );
-    }
-  }
+    const userIds = (members || [])
+      .map((m) => m.user_id)
+      .filter((id) => id !== excludeUserId);
 
-  await Promise.all(sends);
+    if (userIds.length === 0) {
+      return;
+    }
+
+    const { data: subs, error: subsError } = await supabase
+      .from('push_subscriptions')
+      .select('subscription')
+      .in('user_id', userIds);
+
+    if (subsError) {
+      console.error('notifyFamily: failed to fetch subscriptions', subsError);
+      return;
+    }
+
+    const sends = (subs || []).map((row) =>
+      webpush
+        .sendNotification(
+          row.subscription,
+          JSON.stringify({ title, body, url: '/' })
+        )
+        .catch((sendError) => {
+          console.error('notifyFamily: push send failed', sendError);
+        })
+    );
+
+    await Promise.all(sends);
+  } catch (err) {
+    console.error('notifyFamily: unexpected error', err);
+  }
 }
